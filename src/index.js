@@ -8,7 +8,7 @@ export const DBConnection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'password',
-  database: 'mapmanager',
+  database: 'dmtoolbox',
 });
 
 // Connect to MySQL
@@ -32,7 +32,7 @@ app.use(cors({
 
 // Create Database
 app.get('/createdb', (req, res) => {
-  let sql = 'CREATE DATABASE mapmanager';
+  let sql = 'CREATE DATABASE dmtoolbox';
   DBConnection.query(sql, err => {
     if (err) {
       throw err;
