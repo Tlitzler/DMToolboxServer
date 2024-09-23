@@ -1,7 +1,23 @@
 import express from 'express';
 import mysql from 'mysql';
 import cors from 'cors';
-import usersAPI from './users/usersAPI.js';
+import usersAPI, { createUsers } from './users/usersAPI.js';
+import { 
+    createParties,
+    createFolders,
+    createFolderContents,
+    createCampaigns,
+} from './campaigns/campaignsAPI.js';
+import { createCharacters } from './characters/charactersAPI.js';
+import { createEnemies } from './enemies/enemiesAPI.js';
+import { createHazards } from './hazards/hazardsAPI.js';
+import { createEncounters } from './encounters/encountersAPI.js';
+import { createEncounterTables } from './encounterTables/encounterTablesAPI.js';
+import { createFactions } from './factions/factionsAPI.js';
+import { createEvents } from './events/eventsAPI.js';
+import { createLocations } from './locations/locationsAPI.js';
+import { createMaps } from './maps/mapsAPI.js';
+import { createItems } from './items/itemsAPI.js';
 
 // Create connection to the DB
 export const DBConnection = mysql.createConnection({
@@ -27,47 +43,156 @@ app.use(cors({
   origin: 'http://localhost:4448',
 }));
 
-// Add parsing for JSON bodies
-// app.use(express.json());
+// Middleware
+export const runQuery = (sql) => {
+    return new Promise((resolve, reject) => {
+        DBConnection.query(sql, (err, results) => {
+            if (err) {
+                reject(err);
+            }
+            resolve(results);
+        });
+    });
+}
+
+export const insertQuery = (sql) => {
+    return new Promise((resolve, reject) => {
+        runQuery(sql)
+            .then(() => {
+                return runQuery('SELECT LAST_INSERT_ID() as id');
+            })
+            .then(results => {
+                resolve(results[0].id);
+            })
+            .catch(err => {
+                reject(err);
+            });
+    });
+}
+
+// Create Keys Table
+export const createKeysTable = () => {
+    const sql = 'CREATE TABLE IF NOT EXISTS keystable(keyName VARCHAR(255), ' +
+                'objectType VARCHAR(255), ' +
+                'PRIMARY KEY(keyName, objectType))';
+    return runQuery(sql);
+}
+
+// helper function to insert keys into the keys table
+export const insertKeys = (keys) => {
+    const values = keys.map(key => `('${key.keyName}', '${key.objectType}')`).join(', ');
+    const sql = `INSERT INTO keystable (keyName, objectType) VALUES ${values}`;
+    return runQuery(sql);
+}
+
+// Create Array Values Table
+export const createArrayValues = () => {
+    const sql = 'CREATE TABLE IF NOT EXISTS arrayvalues(value VARCHAR(255), ' +
+                'objectId INT, ' +
+                'objectType VARCHAR(255), ' +
+                'keyId INT, ' +
+                'PRIMARY KEY(objectId, objectType, keyId, value))';
+    return runQuery(sql);
+}
 
 // Create Database
 app.get('/createdb', (req, res) => {
-  let sql = 'CREATE DATABASE dmtoolbox';
-  DBConnection.query(sql, err => {
+        let sql = 'CREATE DATABASE dmtoolbox';
+        DBConnection.query(sql, err => {
     if (err) {
-      throw err;
+        throw err;
     }
-    res.send('Database Successfully Created');
-  });
+        res.send('Database Successfully Created');
+    });
 });
 
 // Create Users Table
-app.get('/createusers', (req, res) => {
-  let sql = 'CREATE TABLE users(email VARCHAR(255), ' +
-            'firstname VARCHAR(255), ' +
-            'lastname VARCHAR(255), ' +
-            'password VARCHAR(255), ' +
-            'id INT AUTO_INCREMENT, ' +
-            'PRIMARY KEY(id))';
-  DBConnection.query(sql, err => {
-    if (err) {
-      throw err;
+app.get('/createusers', async (req, res) => {
+    try{
+        await createUsers();
+        res.send('Users Table Successfully created');
+    } catch (err) {
+        throw err;
     }
-    res.send('Users Table Successfully created');
-  });
 });
 
-// Create Campaigns Table
-app.get('/createcampaigns', (req, res) => {
-  let sql = 'CREATE TABLE campaigns(campaignname VARCHAR(255), ' +
-            'campaignid INT AUTO_INCREMENT, ' +
-            'PRIMARY KEY(campaignid))';
-  DBConnection.query(sql, err => {
-    if (err) {
-      throw err;
+// Create Campaigns Table and all required tables
+app.get('/createcampaigns', async (req, res) => {
+    try{
+        const keys = [];
+        await createKeysTable();
+        await createArrayValues();
+        await createCharacters();
+        keys.push(...[
+            {keyName: 'factionIds', objectType: 'characters'},
+            {keyName: 'eventIds', objectType: 'characters'},
+            {keyName: 'class', objectType: 'characters'},
+            {keyName: 'itemIds', objectType: 'characters'},
+        ]);
+        await createEnemies();
+        keys.push(...[
+            {keyName: 'factionIds', objectType: 'enemies'},
+            {keyName: 'itemIds', objectType: 'enemies'},
+        ]);
+        await createHazards();
+        await createEncounters();
+        keys.push(...[
+            {keyName: 'enemies', objectType: 'encounters'},
+            {keyName: 'hazards', objectType: 'encounters'},
+        ]);
+        await createEncounterTables();
+        keys.push(...[
+            {keyName: 'environments', objectType: 'encounterTables'},
+            {keyName: 'locationIds', objectType: 'encounterTables'},
+            {keyName: 'encounters', objectType: 'encounterTables'},
+        ]);
+        await createFactions();
+        keys.push(...[
+            {keyName: 'characterIds', objectType: 'factions'},
+            {keyName: 'enemyIds', objectType: 'factions'},
+            {keyName: 'eventIds', objectType: 'factions'},
+        ]);
+        await createEvents();
+        await createLocations();
+        keys.push(...[
+            {keyName: 'characterIds', objectType: 'locations'},
+            {keyName: 'eventIds', objectType: 'locations'},
+            {keyName: 'factionIds', objectType: 'locations'},
+            {keyName: 'encounterTableIds', objectType: 'locations'},
+        ])
+        await createMaps();
+        keys.push(...[
+            {keyName: 'locationIds', objectType: 'maps'},
+        ]);
+        await createParties();
+        keys.push(...[
+            {keyName: 'characterIds', objectType: 'parties'},
+            {keyName: 'enemyIds', objectType: 'parties'},
+            {keyName: 'factionIds', objectType: 'parties'},
+        ]);
+        await createItems();
+        await createFolders();
+        await createFolderContents();
+        await createCampaigns();
+        keys.push(...[
+            {keyName: 'characters', objectType: 'campaigns'},
+            {keyName: 'enemies', objectType: 'campaigns'},
+            {keyName: 'hazards', objectType: 'campaigns'},
+            {keyName: 'encounters', objectType: 'campaigns'},
+            {keyName: 'encounterTables', objectType: 'campaigns'},
+            {keyName: 'factions', objectType: 'campaigns'},
+            {keyName: 'events', objectType: 'campaigns'},
+            {keyName: 'locations', objectType: 'campaigns'},
+            {keyName: 'maps', objectType: 'campaigns'},
+            {keyName: 'parties', objectType: 'campaigns'},
+            {keyName: 'items', objectType: 'campaigns'},
+            {keyName: 'folders', objectType: 'campaigns'},
+        ]);
+        await insertKeys(keys);
+        res.send('All required Campaigns Tables Successfully created');
+    } catch (err) {
+        throw err;
     }
-    res.send('Campaigns Table Successfully created');
-  });
 });
 
 // Add routing for APIs
@@ -76,46 +201,3 @@ app.use('/users', usersAPI);
 app.listen('3000', () => {
   console.log('Server Started on port 3000');
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//Messing with MongoDB
-
-// const { MongoClient, ServerApiVersion } = require('mongodb');
-// const uri = "mongodb+srv://Tlitzler:Fr3nchT0a$t@dmtoolbox.5jeyg.mongodb.net/?retryWrites=true&w=majority&appName=DMToolbox";
-
-// // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-// const client = new MongoClient(uri, {
-//   serverApi: {
-//     version: ServerApiVersion.v1,
-//     strict: true,
-//     deprecationErrors: true,
-//   }
-// });
-
-// async function run() {
-//   try {
-//     // Connect the client to the server	(optional starting in v4.7)
-//     await client.connect();
-//     // Send a ping to confirm a successful connection
-//     await client.db("admin").command({ ping: 1 });
-//     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-//   } finally {
-//     // Ensures that the client will close when you finish/error
-//     await client.close();
-//   }
-// }
-// run().catch(console.dir);

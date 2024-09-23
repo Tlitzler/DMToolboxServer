@@ -3,6 +3,23 @@ import { DBConnection } from '../index.js';
 
 const usersAPI = express.Router();
 
+export const createUsers = () => {
+  return new Promise((resolve, reject) => {
+    let sql = 'CREATE TABLE IF NOT EXISTS users(email VARCHAR(255), ' +
+              'firstname VARCHAR(255), ' +
+              'lastname VARCHAR(255), ' +
+              'password VARCHAR(255), ' +
+              'id INT AUTO_INCREMENT, ' +
+              'PRIMARY KEY(id))';
+    DBConnection.query(sql, (err, results) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(results);
+    });
+  });
+}
+
 const getExistingUser = (email) => {
   return new Promise((resolve, reject) => {
     let verifySQLQuery = `SELECT * FROM users WHERE email=\'${email}\'`;
