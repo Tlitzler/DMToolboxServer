@@ -7,7 +7,7 @@ export const createLocations = () => {
     const sql = 'CREATE TABLE IF NOT EXISTS locations(name VARCHAR(255), ' +
                 'id INT AUTO_INCREMENT, ' +
                 'userId INT, ' +
-                'imageId INT, ' +
+                'imageURL VARCHAR(255), ' +
                 'description TEXT, ' +
                 'mapId INT, ' +
                 'mapIconId INT, ' +

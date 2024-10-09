@@ -9,7 +9,7 @@ export const createHazards = () => {
                 'userId INT, ' +
                 'type VARCHAR(255), ' +
                 'description TEXT, ' +
-                'imageId INT, ' +
+                'imageURL VARCHAR(255), ' +
                 'multiplier BOOLEAN, ' +
                 'challengeModifier INT, ' +
                 'PRIMARY KEY(id))';

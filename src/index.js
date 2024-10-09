@@ -2,7 +2,7 @@ import express from 'express';
 import mysql from 'mysql';
 import cors from 'cors';
 import usersAPI, { createUsers } from './users/usersAPI.js';
-import { 
+import campaignsAPI, { 
     createParties,
     createFolders,
     createFolderContents,
@@ -21,18 +21,18 @@ import { createItems } from './items/itemsAPI.js';
 
 // Create connection to the DB
 export const DBConnection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'password',
-  database: 'dmtoolbox',
+    host: 'localhost',
+    user: 'root',
+    password: 'password',
+    database: 'dmtoolbox',
 });
 
 // Connect to MySQL
 DBConnection.connect(err => {
-  if (err) {
-    throw err;
-  }
-  console.log('MySQL Connected');
+    if (err) {
+        throw err;
+    }
+    console.log('MySQL Connected');
 });
 
 // Initialize express
@@ -40,13 +40,13 @@ const app = express();
 
 // Add CORS Access-Control-Allow-Origin header
 app.use(cors({
-  origin: 'http://localhost:4448',
+    origin: 'http://localhost:4448',
 }));
 
 // Middleware
-export const runQuery = (sql) => {
+export const runQuery = (sql, values) => {
     return new Promise((resolve, reject) => {
-        DBConnection.query(sql, (err, results) => {
+        DBConnection.query(sql, values, (err, results) => {
             if (err) {
                 reject(err);
             }
@@ -197,6 +197,7 @@ app.get('/createcampaigns', async (req, res) => {
 
 // Add routing for APIs
 app.use('/users', usersAPI);
+app.use('/campaigns', campaignsAPI);
 
 app.listen('3000', () => {
   console.log('Server Started on port 3000');

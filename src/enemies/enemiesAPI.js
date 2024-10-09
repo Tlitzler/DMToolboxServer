@@ -8,7 +8,7 @@ export const createEnemies = () => {
                 'id INT AUTO_INCREMENT, ' +
                 'userId INT, ' +
                 'challengeRating INT, ' +
-                'imageId INT, ' +
+                'imageURL VARCHAR(255), ' +
                 'description TEXT, ' +
                 'hp INT, ' +
                 'PRIMARY KEY(id))';

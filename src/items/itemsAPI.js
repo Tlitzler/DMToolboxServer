@@ -7,7 +7,7 @@ export const createItems = () => {
     const sql = 'CREATE TABLE IF NOT EXISTS items(name VARCHAR(255), ' +
                 'id INT AUTO_INCREMENT, ' +
                 'userId INT, ' +
-                'imageId INT, ' +
+                'imageURL VARCHAR(255), ' +
                 'description TEXT, ' +
                 'value INT, ' +
                 'PRIMARY KEY(id))';

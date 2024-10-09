@@ -8,7 +8,7 @@ export const createCharacters = () => {
                 'id INT AUTO_INCREMENT, ' +
                 'isPlayer BOOLEAN, ' +
                 'userId INT, ' +
-                'imageId INT, ' +
+                'imageURL VARCHAR(255), ' +
                 'description TEXT, ' +
                 'locationId INT, ' +
                 'goals TEXT, ' +
