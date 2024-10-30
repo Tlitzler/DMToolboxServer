@@ -16,7 +16,7 @@ import { createEncounterTables } from './encounterTables/encounterTablesAPI.js';
 import { createFactions } from './factions/factionsAPI.js';
 import { createEvents } from './events/eventsAPI.js';
 import { createLocations } from './locations/locationsAPI.js';
-import { createMaps } from './maps/mapsAPI.js';
+import mapsAPI, { createMaps } from './maps/mapsAPI.js';
 import { createItems } from './items/itemsAPI.js';
 
 // Create connection to the DB
@@ -73,8 +73,9 @@ export const insertQuery = (sql) => {
 // Create Keys Table
 export const createKeysTable = () => {
     const sql = 'CREATE TABLE IF NOT EXISTS keystable(keyName VARCHAR(255), ' +
+                'keyId INT AUTO_INCREMENT, ' +
                 'objectType VARCHAR(255), ' +
-                'PRIMARY KEY(keyName, objectType))';
+                'PRIMARY KEY(keyId))';
     return runQuery(sql);
 }
 
@@ -89,7 +90,6 @@ export const insertKeys = (keys) => {
 export const createArrayValues = () => {
     const sql = 'CREATE TABLE IF NOT EXISTS arrayvalues(value VARCHAR(255), ' +
                 'objectId INT, ' +
-                'objectType VARCHAR(255), ' +
                 'keyId INT, ' +
                 'PRIMARY KEY(objectId, objectType, keyId, value))';
     return runQuery(sql);
@@ -198,6 +198,7 @@ app.get('/createcampaigns', async (req, res) => {
 // Add routing for APIs
 app.use('/users', usersAPI);
 app.use('/campaigns', campaignsAPI);
+app.use('/maps', mapsAPI);
 
 app.listen('3000', () => {
   console.log('Server Started on port 3000');

@@ -1,5 +1,6 @@
 import express from 'express';
 import { runQuery } from '../index.js';
+import { fetchMap } from '../maps/mapsAPI.js';
 
 const campaignsAPI = express.Router();
 campaignsAPI.use(express.json());
@@ -36,8 +37,9 @@ export const createFolderContents = () => {
 export const createCampaigns = () => {
     const sql = 'CREATE TABLE IF NOT EXISTS campaigns(name VARCHAR(255), ' +
                 'id INT AUTO_INCREMENT, ' +
-                'userId INT, ' +
+                'userId INT NOT NULL, ' +
                 'imageURL VARCHAR(255), ' +
+                'defaultMapId INT, ' +
                 'description TEXT, ' +
                 'date DATE, ' +
                 'PRIMARY KEY(id))';
@@ -56,23 +58,83 @@ campaignsAPI.post('/addcampaign', async (req, res) => {
 
     runQuery(sql, values)
         .then((value) => {
-            res.send(200, {campaignId: value.insertId});
+            res.status(200).json({campaignId: value.insertId});
         })
         .catch(err => {
             res.status(400).send(err);
         });
 });
 
-campaignsAPI.get('/fetchcampaigns', async (req, res) => {
-    let sql = 'SELECT * FROM campaigns WHERE userId = ?';
-    const values = [req.query.userId];
+campaignsAPI.put('/setdefaultmap', async (req, res) => {
+    let post = req.body;
+
+    let sql = 'UPDATE campaigns SET defaultMapId = ? WHERE id = ?';
+    const values = [post.mapId, post.campaignId];
+
     runQuery(sql, values)
-        .then((results) => {
-            res.send(200, {campaigns: results});
+        .then(() => {
+            res.status(200).json({defaultMapId: post.mapId});
         })
         .catch(err => {
             res.status(400).send(err);
         });
+});
+
+const defaultCampaign = {
+    userId: 0,
+    name: '',
+    id: 0,
+    description: '',
+    defaultMapId: null,
+    characters: [],
+    enemies: [],
+    hazards: [],
+    encounters: [],
+    encounterTables: [],
+    factions: [],
+    events: [],
+    locations: [],
+    maps: [],
+    parties: [],
+    items: [],
+    folders: [],
+    date: '',
+};
+
+campaignsAPI.get('/fetchcampaigns', async (req, res) => {
+    try {
+        let sql = 'SELECT * FROM campaigns WHERE userId = ? ORDER BY id ASC';
+        const values = [req.query.userId];
+        const results = await runQuery(sql, values)
+        const formattedCampaigns = results.map(campaign => ({...JSON.parse(JSON.stringify(defaultCampaign)), ...campaign}));
+                
+        sql = `
+            SELECT campaigns.id, keystable.keyName, arrayvalues.value
+            FROM campaigns
+            JOIN arrayvalues ON campaigns.id = arrayvalues.objectId
+            JOIN keystable ON arrayvalues.keyId = keystable.keyId
+            WHERE campaigns.userId = ?
+            ORDER BY campaigns.id ASC
+        `;
+
+        const keyValuePairs = await runQuery(sql, values);
+
+        for (const row of keyValuePairs) {
+            
+            switch (row.keyName) {
+                case 'maps':
+                    const map = await fetchMap(row.value);
+                    formattedCampaigns.find(campaign => campaign.id === row.id).maps.push(map[0]);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        res.status(200).json({campaigns: formattedCampaigns});
+    } catch (err) {
+        res.status(400).send(err);
+    }
 });
 
 export default campaignsAPI;
