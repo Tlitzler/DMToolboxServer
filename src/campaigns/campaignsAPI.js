@@ -1,6 +1,7 @@
 import express from 'express';
 import { runQuery } from '../index.js';
 import { fetchMap } from '../maps/mapsAPI.js';
+import { fetchItem } from '../items/itemsAPI.js';
 
 const campaignsAPI = express.Router();
 campaignsAPI.use(express.json());
@@ -126,6 +127,9 @@ campaignsAPI.get('/fetchcampaigns', async (req, res) => {
                     const map = await fetchMap(row.value);
                     formattedCampaigns.find(campaign => campaign.id === row.id).maps.push(map[0]);
                     break;
+                case 'items':
+                    const item = await fetchItem(row.value);
+                    formattedCampaigns.find(campaign => campaign.id === row.id).items.push(item[0]);
                 default:
                     break;
             }

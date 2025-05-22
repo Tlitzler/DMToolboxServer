@@ -17,7 +17,7 @@ import { createFactions } from './factions/factionsAPI.js';
 import { createEvents } from './events/eventsAPI.js';
 import { createLocations } from './locations/locationsAPI.js';
 import mapsAPI, { createMaps } from './maps/mapsAPI.js';
-import { createItems } from './items/itemsAPI.js';
+import itemsAPI, { createItems } from './items/itemsAPI.js';
 
 // Create connection to the DB
 export const DBConnection = mysql.createConnection({
@@ -199,6 +199,7 @@ app.get('/createcampaigns', async (req, res) => {
 app.use('/users', usersAPI);
 app.use('/campaigns', campaignsAPI);
 app.use('/maps', mapsAPI);
+app.use('/items', itemsAPI);
 
 app.listen('3000', () => {
   console.log('Server Started on port 3000');
